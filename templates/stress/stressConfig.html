@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>icode_test_platform</title>
+    <script type="application/javascript">
+        var check = 'checkall'
+        function getImages(){
+            document.getElementById("result").innerText = "镜像获取中...";
+            var tbody=document.getElementById("serverTable");
+            var rowNum=tbody.rows.length;
+
+            // 获取环境选择
+            var envbox=document.getElementById("choose_env");
+            radios=envbox.getElementsByTagName("input");
+            for(i=0;i<radios.length;i++){
+                if(radios[i].checked===true){
+                    var choose_env = radios[i].value;
+                    console.log(choose_env);
+                }
+            }
+
+            var httpRequest = new XMLHttpRequest();//第一步：建立所需的对象
+            var url = '/stress_jenkins/stress/getImages'+
+                "?choose_env="+choose_env;
+            httpRequest.open('GET', url, true);//第二步：打开连接
+            httpRequest.send();//第三步：发送请求  将请求参数写在URL中
+            httpRequest.onreadystatechange = function () {
+                if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+                    var obj = JSON.parse(httpRequest.responseText);
+                    document.getElementById("jenkins").style.display="block";
+                    console.log(obj);
+                    // 清除旧表格数据
+                    for (var i=1;i<rowNum;i++){
+                        tbody.deleteRow(i);
+                        rowNum=rowNum-1;
+                        i=i-1;
+                    }
+                    for (var i=0;i<obj.data.server.length;i++)
+                        !(function(j) {
+                            var server = obj.data.server[j]
+                            var image = obj.data.image[j]
+                            var tr = tbody.insertRow(tbody.rows.length);
+                            var td_1 = tr.insertCell(0);
+                            td_1.innerHTML = "<input id='choose_server' type='checkbox' name='choose_server' value='"+i+"'/>";
+                            var td_2 = tr.insertCell(1);
+                            td_2.innerHTML = "<div contenteditable='false' id='server'>"+server+"</div>";
+                            var td_3 = tr.insertCell(2);
+                            td_3.innerHTML = "<div contenteditable='false' id='image'>"+image+"</div>";
+                        }(i))
+                    document.getElementById("result").innerText = "请选择需要执行的镜像";
+                }
+            };
+        }
+        function swapCheck(){
+            var objNameList=document.getElementsByName("choose_server");
+            if(null!=objNameList){
+                for(var i=0;i<objNameList.length;i++){
+                    if(objNameList[i].checked===true) {
+                        if(check !== 'checkall') {  // 非全选
+                            objNameList[i].checked=false;
+                            // check = "uncheckall";
+                        }
+                    } else {
+                        if(check !== 'uncheckall') {  // 非取消全选
+                            objNameList[i].checked=true;
+                            // check = "checkall";
+                        }
+                    }
+                }
+            }
+            console.log(objNameList);
+        }
+        function submitJenkins(){
+            document.getElementById("result").innerText = "发起Jenkins...";
+            let pod_num = document.getElementById("pod_num").value;
+
+            // 获取命令选择
+            var obox=document.getElementById("choose_box");
+            radios=obox.getElementsByTagName("input");
+            for(i=0;i<radios.length;i++){
+                if(radios[i].checked===true){
+                    var choose_action = radios[i].value;
+                    console.log(choose_action);
+                }
+            }
+
+            // 获取选中行
+            var obj = document.getElementsByName("choose_server");
+            let serverList = [];
+            let imageList = [];
+            var oTable = document.getElementById("serverTable");
+            var rows = oTable.rows;
+            for (var i=0;i<obj.length;i++){
+                if(obj[i].checked) {
+                    var cells = rows[i+1].cells;
+                    serverList.push(cells[1].innerText);
+                    imageList.push(cells[2].innerText);
+                }
+            }
+            console.log(serverList);
+
+            var httpRequest = new XMLHttpRequest();//第一步：建立所需的对象
+            var url = '/stress_jenkins/stress/configJenkins'+
+                "?choose_action="+choose_action+
+                "&pod_num="+pod_num+
+                "&serverList="+serverList+
+                "&imageList="+imageList;
+            httpRequest.open('GET', url, true);//第二步：打开连接
+            httpRequest.send();//第三步：发送请求  将请求参数写在URL中
+            httpRequest.onreadystatechange = function () {
+                if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+                    var json = httpRequest.responseText;//获取到json字符串，还需解析
+                    console.log(json);
+                    document.getElementById("result").innerText = json;
+                }
+            };
+        }
+    </script>
+</head>
+<body>
+<h1 style="color: #08A993">豌豆编程压测环境部署</h1>
+<br>
+<div id="choose_env"><label for="choose_url1">选择镜像获取环境：</label>
+    <input id="choose_url1" type="radio" name="choose_url" value="test"/>UAT环境
+    <input id="choose_url2" type="radio" name="choose_url" value="dev"/>开发环境
+    <input id="choose_url2" type="radio" name="choose_url" value="pro"/>生产环境
+</div>
+<button id="submit_get" name="submit_get" value="提交" onClick="getImages()">获取镜像列表</button>
+<br>
+<div id="jenkins" style="display: none">
+    <br>
+    <table id="serverTable">
+        <thead>
+        <tr><th><span><button id="all_check" onclick="swapCheck()">全选</button></span></th><th><span>服务名</span></th><th><span>镜像地址</span></th></tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <br>
+    <div id="choose_box"><label for="choose_action1">选择执行命令：</label>
+        <input id="choose_action1" type="radio" name="choose_action" value="deploy_image"/>更新镜像
+        <input id="choose_action2" type="radio" name="choose_action" value="modify_replicas"/>调整pod数
+        <input id="choose_action3" type="radio" name="choose_action" value="restart"/>重启服务
+    </div>
+    <div id="pod_num_div"><label for="pod_num">输入副本数：</label><input id="pod_num" type="tel" name="pod_num" value="0" min="0"/></div>
+    <br>
+    <button id="jenkinsSub" name="jenkinsSub" value="提交" onclick="submitJenkins()">发起Jenkins</button>
+</div>
+<br>
+<p>请求结果：</p>
+<div id="result" style="width: 500px;height:200px;"></div>
+</body>
+</html>

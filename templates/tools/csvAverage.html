@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>icode_test_platform</title>
+    <script type="application/javascript">
+        /**
+         * 获取 blob
+         * url 目标文件地址
+         */
+        function getBlob(url) {
+            return new Promise(resolve => {
+                const xhr = new XMLHttpRequest();
+                var filename = document.getElementById("filename").value;
+                var fileurl = '/tools_csv/download/'+filename.slice(0,-4)+"_"+url+".csv";
+                xhr.open('GET', fileurl, true);
+                xhr.responseType = 'blob';
+                xhr.onload = () => {
+                    if (xhr.status === 200) {
+                        resolve(xhr.response);
+                    }
+                };
+                xhr.send();
+                xhr.onreadystatechange = function () {
+                    if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+                        document.getElementById("result").innerText = httpRequest.responseText;
+                        document.getElementById("fileList").style.display="block";
+                    }else {
+                        document.getElementById("result").innerText = "下载失败";
+                    }
+                };
+            });
+        }
+
+        /**
+         * 保存 blob
+         * filename 想要保存的文件名称
+         */
+        function saveAs(blob) {
+            var filename = document.getElementById("filename").value;
+            if (window.navigator.msSaveOrOpenBlob) {
+                navigator.msSaveBlob(blob, filename);
+            } else {
+                const link = document.createElement('a');
+                const body = document.querySelector('body');
+
+                link.href = window.URL.createObjectURL(blob);
+                console.log("下载："+filename);
+                link.download = filename;
+                // fix Firefox
+                link.style.display = 'none';
+                body.appendChild(link);
+                link.click();
+                body.removeChild(link);
+                window.URL.revokeObjectURL(link.href);
+            }
+        }
+
+        /**
+         * 下载
+         * @param {String} url 目标文件地址
+         // * @param {String} filename 想要保存的文件名称
+         */
+        function download(url) {
+            getBlob(url).then(blob => {
+                saveAs(blob);
+            });
+        }
+
+
+        function csvAverage(){
+            var filename = document.getElementById("filename").value;
+            let num = document.getElementById("num").value;
+            var httpRequest = new XMLHttpRequest();
+            var url = '/tools_csv/py/csvAverage'+
+                "?filename="+filename+
+                "&dividenum="+num;
+            httpRequest.open('GET', url, true);
+            httpRequest.send();
+            httpRequest.onreadystatechange = function () {
+                if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+                    document.getElementById("result").innerText = httpRequest.responseText;
+                    document.getElementById("fileList").style.display="block";
+                    var fileList = document.getElementById("fileList");
+                    var tBodies = fileList.tBodies;
+                    var tbody = tBodies[0];
+                    for (var i=0;i<num;i++){
+                        var tr = tbody.insertRow(tbody.rows.length);
+                        var td_1 = tr.insertCell(0);
+                        td_1.innerHTML = "<div contenteditable='false' id='filenum'>"+filename.slice(0,-4)+"_"+(i+1)+"</div>";
+                        var td_2 = tr.insertCell(1);
+                        td_2.innerHTML = "<button contenteditable='false' id='download' onclick='download("+(i+1)+")'>下载</button>";
+                    }
+                }else {
+                    document.getElementById("result").innerText = "切分失败";
+                }
+            };
+        }
+
+        function clearCsv(){
+            var httpRequest = new XMLHttpRequest();
+            var url = '/tools_csv/py/csvAverage'+
+                "?filename="+filename+
+                "&dividenum="+num;
+            httpRequest.open('GET', url, true);
+            httpRequest.send();
+        }
+    </script>
+</head>
+<body>
+
+<h1>CSV文件切分</h1>
+{% if filename %}
+<div>
+    <label for="filename">文件名：</label><input id="filename" type="text" name="filename" value={{ filename }} />
+    <br>
+    <label for="num">需切分的数量：</label><input id="num" type="tel" name="dividenum" />
+    <br>
+    <input type="submit" value="切分" onclick="csvAverage()">
+</div>
+<br>
+<p>请求结果：</p>
+<div id="result"></div>
+<br>
+<br>
+<table id="fileList" style="display: none">
+    <thead>
+    <tr><th><span>文件</span></th><th><span>下载</span></th></tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+{% else %}
+<form id="form1" method="post" action="/tools_csv/api/upload" enctype="multipart/form-data">
+    <div>
+        <label>
+            <input name="htmlName" value="csvAverage.html" hidden>
+        </label>
+        <label for="File1">请选择utf-8格式的CSV文件：</label><input id="File1" type="file" name="myfile" accept=".csv"/>
+        <br>
+        <input type="submit" value="上传" onclick="set()">
+    </div>
+</form>
+{% endif %}
+
+
+</body>
+</html>

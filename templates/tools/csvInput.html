@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QAplatform-编辑表格</title>
+    <script>
+        let inputNum = 0;
+        function input(){
+            inputNum = document.getElementById("num").value;
+            if (inputNum === null){
+                inputNum = 0
+            }
+        }
+        function addRow(){
+            var oTable = document.getElementById("oTable");
+            var tname = document.getElementById("tname").value;
+            let tphone = document.getElementById("tphone").value;
+            let phoneNum = parseInt(tphone)+parseInt(inputNum)
+            var tBodies = oTable.tBodies;
+            var tbody = tBodies[0];
+            var tr = tbody.insertRow(tbody.rows.length);
+            var td_1 = tr.insertCell(0);
+            td_1.innerHTML = "<div contenteditable='true' id='name'>"+tname+inputNum+"</div>";
+            var td_2 = tr.insertCell(1);
+            td_2.innerHTML = "<div contenteditable='true' id='phone'>"+phoneNum+"</div>";
+        }
+        function remoteRow(tbIndex){
+            var oTable = document.getElementById("oTable");
+            var tBodies = oTable.tBodies;
+            var tbody = tBodies[0];
+            tbody.deleteRow(tbIndex);
+        }
+        function count(put){
+            if(put==="+"){
+                inputNum = parseInt(inputNum)+1
+            }else {
+                inputNum = parseInt(inputNum)-1
+            }
+        }
+        function submit(){
+            var oTable = document.getElementById("oTable");
+            let nameList = [];
+            let phoneList = [];
+            var rows = oTable.rows;
+            for (var i = 1; i < rows.length; i++){
+                var cells = rows[i].cells;
+                nameList.push(cells[0].innerText);
+                phoneList.push(cells[1].innerText);
+            }
+            console.log(nameList);
+            console.log(phoneList);
+            // document.getElementById("nameList").value = nameList
+            // document.getElementById("phoneList").value = phoneList
+            var httpRequest = new XMLHttpRequest();//第一步：建立所需的对象
+                httpRequest.open('GET', '/test/csvInput?nameList='+nameList+"&phoneList="+phoneList, true);//第二步：打开连接  将请求参数写在url中  ps:"./Ptest.php?name=test&nameone=testone"
+                httpRequest.send();//第三步：发送请求  将请求参数写在URL中
+                /**
+                 * 获取数据后的处理程序
+                 */
+                httpRequest.onreadystatechange = function () {
+                    if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+                        var json = httpRequest.responseText;//获取到json字符串，还需解析
+                        console.log(json);
+                    }
+                };
+        }
+    </script>
+</head>
+<body>
+    <label>
+        <input id="tname" type="text" style="font-size:16px;" placeholder="模板姓名"/>
+        <input id="tphone" type="text" style="font-size:16px;" placeholder="模板手机号"/>
+        <input id="num" type="text" style="font-size:16px;" placeholder="后缀编号" onblur="input()"/>
+        <br>
+        <br>
+        <input type="button" onClick="addRow();count('+');" style="font-size:16px;" value="加一行"/>
+        <input type="button" onClick="remoteRow(-1);;count('-');" style="font-size:16px;" value="删一行"/>
+    </label>
+    <br>
+    <br>
+    <legend>待导入的学员信息</legend>
+    <table id="oTable" border="1" width="500">
+        <thead>
+        <tr style="background-color:#eeeeee;" bordercolor="#aaaaaa">
+            <th>姓名</th>
+            <th>手机号</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td><div contenteditable="true" id="name">小明1</div></td>
+            <td><div contenteditable="true" id="phone">14700000001</div></td>
+<!--            <td>小明1</td>-->
+<!--            <td>14700000001</td>-->
+        </tr>
+        </tbody>
+    </table>
+<!--    <button name="getUserInfo" type="button" value="获取" onClick="submit()">获取</button>-->
+<!--<form action="/test/csvInput" enctype="multipart/form-data" method="get">-->
+<!--    <label for="nameList"></label><input id="nameList" name="nameList"/>-->
+<!--    <label for="phoneList"></label><input id="phoneList" name="phoneList">-->
+<button name="submitUserInfo" type="submit" value="提交" onClick="submit()">提交</button>
+<!--</form>-->
+</body>
+</html>

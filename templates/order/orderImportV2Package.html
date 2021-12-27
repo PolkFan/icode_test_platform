@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>icode_test_platform</title>
+    <script type="text/javascript">
+        let inputNum = 1;
+        function input(){
+            inputNum = document.getElementById("num").value;
+            if (inputNum === null){
+                inputNum = 1
+            }
+        }
+        function addRow(){
+            var oTable = document.getElementById("oTable");
+            var tname = document.getElementById("tname").value;
+            let tarea_code = document.getElementById("tarea_code").value;
+            let tphone = document.getElementById("tphone").value;
+            let phoneNum = parseInt(tphone)+parseInt(inputNum)-1
+            var tBodies = oTable.tBodies;
+            var tbody = tBodies[0];
+            var tr = tbody.insertRow(tbody.rows.length);
+            var td_1 = tr.insertCell(0);
+            td_1.innerHTML = "<div contenteditable='true' id='name'>"+tname+inputNum+"</div>";
+            var td_2 = tr.insertCell(1);
+            td_2.innerHTML = "<div contenteditable='true' id='area_code'>"+tarea_code+"</div>";
+            var td_3 = tr.insertCell(2);
+            td_3.innerHTML = "<div contenteditable='true' id='phone'>"+phoneNum+"</div>";
+        }
+        function remoteRow(tbIndex){
+            var oTable = document.getElementById("oTable");
+            var tBodies = oTable.tBodies;
+            var tbody = tBodies[0];
+            tbody.deleteRow(tbIndex);
+        }
+        function count(put){
+            if(put==="+"){
+                inputNum = parseInt(inputNum)+1
+            }else {
+                inputNum = parseInt(inputNum)-1
+            }
+        }
+        function conhidden(choose){
+            if (choose === "test"){
+                document.getElementById("channel_id").value = "205552";
+                document.getElementById("channel_id_div").style.display="block";
+            //     document.getElementById("Authorization_div").style.display="none";
+            //     // document.getElementById("Authorization").style.visibility="hidden";
+            //     document.getElementById("sku_id_div").style.display="none";
+            //     document.getElementById("sku_price_div").style.display="none";
+            //     document.getElementById("creatSku").style.display="block";
+            //     document.getElementById("submitSku").style.visibility="visible";
+            //     // document.getElementById("course_id_div").style.display="block";
+            }else {
+                document.getElementById("channel_id").value = "467977";
+                document.getElementById("channel_id_div").style.display="none";
+            //     document.getElementById("Authorization_div").style.display="block";
+            //     // document.getElementById("Authorization").style.visibility="visible";
+            //     document.getElementById("sku_id_div").style.display="block";
+            //     document.getElementById("sku_price_div").style.display="block";
+            //     document.getElementById("creatSku").style.display="none";
+            //     document.getElementById("submitSku").style.visibility="hidden";
+            //     // document.getElementById("course_id_div").style.display="none";
+            }
+        }
+        // window.onload = hidden()
+        function checkSku(){
+            var skuTable = document.getElementById("skuTable");
+            var rowNum=skuTable.rows.length;
+            for (var i=1;i<rowNum;i++)
+            {
+                skuTable.deleteRow(i);
+                rowNum=rowNum-1;
+                i=i-1;
+            }
+            var tBodies = skuTable.tBodies;
+            var tbody = tBodies[0];
+            // 获取环境选择
+            var obox=document.getElementById("choose_box");
+            radios=obox.getElementsByTagName("input");
+            for(i=0;i<radios.length;i++){
+                if(radios[i].checked===true){
+                    var choose_url = radios[i].value;
+                }
+            }
+
+            // 获取类型选择
+            var typebox=document.getElementById("choose_type_box");
+            radios=typebox.getElementsByTagName("input");
+            for(i=0;i<radios.length;i++){
+                if(radios[i].checked===true){
+                    var choose_type = radios[i].value;
+                }
+            }
+            if (!choose_url){choose_url = "undefinde"}
+            if (!choose_type){choose_type = "undefinde"}
+
+            var url = '/order_V2/py/orderCheckSkuV2?env='+choose_url+'&type='+choose_type;
+            var httpRequest = new XMLHttpRequest();
+            httpRequest.open('GET', url, true);
+            httpRequest.send();
+            httpRequest.onreadystatechange = function () {
+                if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+                    var obj = JSON.parse(httpRequest.responseText);
+                    for (var i=0;i<obj.data.length;i++)
+                        !(function(j) {
+                            var val = obj.data[j]
+                            var tr = tbody.insertRow(tbody.rows.length);
+                            if (val.env === 2){var env = "生产";}else {env = "测试";}
+                            if (val.course_type === 1){var course_type = "入门课";}else if (val.course_type === 2){course_type = "正式课";}else {course_type = "特训课";}
+                            var td_1 = tr.insertCell(0);
+                            td_1.innerHTML = "<input id=\"choose_sku\" type=\"radio\" name=\"choose_sku\" onclick='setSku()'/>";
+                            var td_2 = tr.insertCell(1);
+                            td_2.innerHTML = "<div contenteditable='false' id='env'>"+env+"</div>";
+                            var td_3 = tr.insertCell(2);
+                            td_3.innerHTML = "<div contenteditable='false' id='course_id'>"+val.course_id+"</div>";
+                            var td_4 = tr.insertCell(3);
+                            td_4.innerHTML = "<div contenteditable='false' id='course_name'>"+val.course_name+"</div>";
+                            var td_5 = tr.insertCell(4);
+                            td_5.innerHTML = "<div contenteditable='false' id='course_type'>"+course_type+"</div>";
+                            var td_6 = tr.insertCell(5);
+                            td_6.innerHTML = "<div contenteditable='false' id='sku_id'>"+val.sku_id+"</div>";
+                            var td_7 = tr.insertCell(6);
+                            td_7.innerHTML = "<div contenteditable='false' id='sku_price'>"+val.sku_price+"</div>";
+                        }(i))
+                }
+            };
+        }
+        function addSku(){
+            document.getElementById("result").innerText = "创建套餐中...";
+            var course_id = document.getElementById("add_course_id").value;
+            var course_name = document.getElementById("add_course_name").value;
+            var course_type = document.getElementById("add_course_type").value;
+            var httpRequest = new XMLHttpRequest();
+            var url = '/order_V2/py/orderCreatSkuV2'+
+                "?course_id="+course_id+
+                "&course_name="+course_name+
+                "&course_type="+course_type;
+            httpRequest.open('GET', url, true);
+            httpRequest.send();
+            httpRequest.onreadystatechange = function () {
+                if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+                    var obj = JSON.parse(httpRequest.responseText);
+                    console.log(obj);
+                    document.getElementById("result").innerText = httpRequest.responseText;
+                }
+            };
+            setTimeout(checkSku(),"1000");
+        }
+        function setSku(){
+            var skuTable = document.getElementById("skuTable");
+            // 获取环境选择
+            for(var i=1;i<skuTable.rows.length;i++){
+                if(skuTable.rows[i].cells[0].children[0].checked===true){
+                    document.getElementById("sku_id").value = skuTable.rows[i].cells[5].innerText;
+                    document.getElementById("sku_price").value = skuTable.rows[i].cells[6].innerText;
+                }
+            }
+        }
+        function submit(){
+            document.getElementById("result").innerText = "订单导入中...";
+            var oTable = document.getElementById("oTable");
+            let nameList = [];
+            let area_codeList = [];
+            let phoneList = [];
+
+            // 获取环境选择
+            var obox=document.getElementById("choose_box");
+            radios=obox.getElementsByTagName("input");
+            for(var i=0;i<radios.length;i++){
+                if(radios[i].checked===true){
+                    choose_url = radios[i].value;
+                    console.log(choose_url);
+                }
+            }
+            var Authorization = document.getElementById("Authorization").value;
+            let channel_id = document.getElementById("channel_id").value;
+            let sku_id = document.getElementById("sku_id").value;
+            let sku_price = document.getElementById("sku_price").value;
+            var rows = oTable.rows;
+            for (i=1; i < rows.length; i++){
+                var cells = rows[i].cells;
+                nameList.push(cells[0].innerText);
+                area_codeList.push(cells[1].innerText);
+                phoneList.push(cells[2].innerText);
+            }
+            console.log(nameList);
+            console.log(area_codeList);
+            console.log(phoneList);
+            var httpRequest = new XMLHttpRequest();//第一步：建立所需的对象
+            var url = '/order_V2/py/orderImportV2Package'+
+                "?nameList="+nameList+
+                "&area_codeList="+area_codeList+
+                "&phoneList="+phoneList+
+                "&choose_url="+choose_url+
+                "&Authorization="+Authorization+
+                "&channel_id="+channel_id+
+                "&sku_id="+sku_id+
+                "&sku_price="+sku_price;
+            httpRequest.open('GET', url, true);//第二步：打开连接
+            httpRequest.send();//第三步：发送请求  将请求参数写在URL中
+            /**
+             * 获取数据后的处理程序
+             */
+            httpRequest.onreadystatechange = function () {
+                if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+                    var json = httpRequest.responseText;//获取到json字符串，还需解析
+                    console.log(json);
+                    document.getElementById("result").innerText = json;
+                }
+            };
+        }
+    </script>
+</head>
+<body style="background-color: #F5F5F5" onload="checkSku()">
+
+<h1 style="color: #08A993">豌豆编程造数平台</h1>
+
+<table border="1" cellspacing="0">
+    <thead>
+    <tr><th><span>模板姓名</span></th><th><span>模板区号</span></th><th><span>模板手机号</span></th><!--<th><span>后缀起始编号</span></th>--></tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td><label for="tname"></label><input id="tname" type="text" placeholder="模板姓名" value="小明"/></td>
+        <td><label for="tarea_code"></label><input id="tarea_code" type="number" placeholder="模板区号" value="86"/></td>
+        <td><label for="tphone"></label><input id="tphone" type="tel" placeholder="模板手机号" value="14700000001"/></td>
+<!--        <td><label for="num"></label><input id="num" type="text" placeholder="后缀编号" onblur="input()" value="1"/></td>-->
+    </tr>
+    </tbody>
+</table>
+<br>
+<input type="button" onClick="addRow();count('+');" style="font-size:16px;" value="加一行"/>
+<input type="button" onClick="remoteRow(-1);;count('-');" style="font-size:16px;" value="删一行"/>
+<table id="oTable" border="1" width="500" cellspacing="0">
+    <thead>
+    <tr style="background-color:#eeeeee;" bordercolor="#aaaaaa">
+        <th>姓名</th><th>区号</th><th>手机号</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!--    <tr>-->
+    <!--        <td><div contenteditable="true" id="name">小明1</div></td>-->
+    <!--        <td><div contenteditable="true" id="area_code">86</div></td>-->
+    <!--        <td><div contenteditable="true" id="phone">14700000001</div></td>-->
+    <!--    </tr>-->
+    </tbody>
+</table>
+<br>
+<div id="choose_box"><label for="choose_url1">选择导入环境：</label>
+    <input id="choose_url1" type="radio" name="choose_url" value="test" onClick="conhidden('test');checkSku()"/>测试
+    <input id="choose_url2" type="radio" name="choose_url" value="gray" onClick="conhidden('gray');checkSku()"/>灰度
+    <input id="choose_url3" type="radio" name="choose_url" value="pro" onClick="conhidden('pro');checkSku()"/>生产
+</div>
+<div id="choose_type_box"><label for="choose_type1">选择课程类型：</label>
+    <input id="choose_type1" type="radio" name="choose_type" value="1" onClick="checkSku()"/>入门课
+    <input id="choose_type2" type="radio" name="choose_type" value="2" onClick="checkSku()"/>正式课
+    <input id="choose_type3" type="radio" name="choose_type" value="3" onClick="checkSku()"/>特训课
+</div>
+<div id="Authorization_div"><label for="Authorization">输入crm的Authorization：</label><input id="Authorization" type="text" name="Authorization" placeholder="可不填"/></div>
+<div id="channel_id_div"><label for="channel_id">输入渠道ID：</label><input id="channel_id" type="number" name="channel_id" value="467977"/></div>
+<div id="sku_id_div"><label for="sku_id">输入V2套餐SKUID：</label><input id="sku_id" type="number" name="sku_id" value="31791779"/></div>
+<div id="sku_price_div"><label for="sku_price">输入V2套餐优惠价：</label><input id="sku_price" type="number" name="sku_price" value="0.01"/></div>
+<br>
+<button id="selectSku" name="selectSku" type="submit" value="查询套餐" onClick="checkSku()">刷新查询</button>
+<table id="skuTable" border="1" width="500" cellspacing="0">
+    <thead>
+    <tr><th><span>单选</span></th><th><span>环境</span></th><th><span>课程id</span></th><th><span>课程名称</span></th><th><span>类型</span></th><th><span>V2套餐SKUID</span></th><th><span>套餐优惠价</span></th></tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+<br>
+<table id="creatSku" style="width: min-content;" border="1" cellspacing="0">
+    <thead>
+    <tr><th><span>course_id</span></th><th><span>course_name</span></th><th><span>course_type</span></th></tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td><label for="add_course_id"></label><input id="add_course_id" type="number" placeholder="course_id" value="5791"/></td>
+        <td><label for="add_course_name"></label><input id="add_course_name" type="text" placeholder="course_name" value="测试课程"/></td>
+        <td><label for="add_course_type"></label><input id="add_course_type" type="number" placeholder="1入门、2正式、3特训"/></td>
+    </tr>
+    </tbody>
+</table>
+<br>
+<button id="submitUserInfo" name="submitUserInfo" type="submit" value="报名提交" onClick="submit()">报名提交</button>
+<button id="submitSku" name="submitSku" type="submit" value="添加套餐" onClick="addSku()">添加套餐</button>
+<br>
+<br>
+<p>请求结果：</p>
+<div id="result" style="width: 500px;height:200px;"></div>
+</body>
+</html>
